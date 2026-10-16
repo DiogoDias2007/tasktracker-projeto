@@ -407,12 +407,68 @@ def salvar_dados():
 
 
 # ----------------------------------------------------------------------
+# Buscar e editar tarefa
+# ----------------------------------------------------------------------
+
+def exibir_detalhes(t):
+    atraso = "  (ATRASADA)" if esta_atrasada(t) else ""
+    print(f"Identificador ....: {t['id']}")
+    print(f"Título ...........: {t['titulo']}")
+    print(f"Descrição ........: {t['descricao'] or '-'}")
+    print(f"Prioridade .......: {nome(t['prioridade'])}")
+    print(f"Categoria ........: {t['categoria'] or '-'}")
+    print(f"Situação .........: {nome(t['situacao'])}{atraso}")
+    print(f"Data de criação ..: {formatar_data(t['data_criacao'])}")
+    print(f"Data limite ......: {formatar_data(t['data_limite'])}")
+    print(f"Data de conclusão : {formatar_data(t['data_conclusao'])}")
+
+
+def buscar_tarefa():
+    indice = localizar_tarefa()
+    if indice != -1:
+        exibir_detalhes(tarefas[indice])
+
+
+def editar_tarefa():
+    indice = localizar_tarefa()
+    if indice == -1:
+        return
+    tarefa = tarefas[indice]
+
+    # R7: tarefa concluída ou cancelada só pode ser consultada ou excluída
+    if tarefa["situacao"] in SITUACOES_FINAIS:
+        print("ERRO: tarefa encerrada não pode ser editada.")
+        return
+
+    campos = {
+        "1": ("titulo", ler_titulo),
+        "2": ("descricao", ler_descricao),
+        "3": ("prioridade", ler_prioridade),
+        "4": ("categoria", ler_categoria),
+        "5": ("data_limite", ler_data_limite),
+    }
+    print("Campos: 1-Título  2-Descrição  3-Prioridade  4-Categoria  5-Data limite")
+    escolha = ler("Campo a alterar: ")
+    if escolha not in campos:
+        print("ERRO: campo inválido. Escolha de 1 a 5.")
+        return
+
+    chave, ler_campo = campos[escolha]
+    tarefa[chave] = ler_campo()   # o novo valor passa pelas mesmas regras do cadastro
+
+    salvar_dados()
+    print("Tarefa atualizada.")
+
+
+# ----------------------------------------------------------------------
 # 3.8.2 Programa principal
 # ----------------------------------------------------------------------
 
 MENU = [
     ("1", "Cadastrar tarefa", cadastrar_tarefa),
     ("2", "Listar todas as tarefas", listar_tarefas),
+    ("3", "Buscar tarefa por identificador", buscar_tarefa),
+    ("4", "Editar tarefa", editar_tarefa),
     ("5", "Iniciar tarefa", lambda: mudar_situacao("EM_ANDAMENTO")),
     ("6", "Concluir tarefa", lambda: mudar_situacao("CONCLUIDA")),
     ("7", "Cancelar tarefa", lambda: mudar_situacao("CANCELADA")),
