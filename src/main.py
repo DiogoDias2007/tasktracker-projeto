@@ -315,6 +315,29 @@ def mudar_situacao(nova_situacao):
 
 
 # ----------------------------------------------------------------------
+# 3.8.5 Excluir tarefa
+# ----------------------------------------------------------------------
+
+def excluir_tarefa():
+    indice = localizar_tarefa()
+    if indice == -1:
+        return
+
+    # R10: exclusão exige confirmação e não pode ser desfeita
+    print(f"Excluir a tarefa '{tarefas[indice]['titulo']}'?")
+    confirmacao = ler("Esta ação não pode ser desfeita. Digite SIM para confirmar: ")
+    if confirmacao != "SIM":
+        print("Operação cancelada.")
+        return
+
+    tarefas.pop(indice)
+    # proximo_id não diminui: o identificador nunca se repete (R6)
+
+    salvar_dados()
+    print("Tarefa excluída.")
+
+
+# ----------------------------------------------------------------------
 # Persistência (será implementada no commit "Adiciona persistência em arquivo")
 # Por enquanto as tarefas ficam apenas na memória.
 # ----------------------------------------------------------------------
@@ -337,6 +360,7 @@ MENU = [
     ("5", "Iniciar tarefa", lambda: mudar_situacao("EM_ANDAMENTO")),
     ("6", "Concluir tarefa", lambda: mudar_situacao("CONCLUIDA")),
     ("7", "Cancelar tarefa", lambda: mudar_situacao("CANCELADA")),
+    ("8", "Excluir tarefa", excluir_tarefa),
 ]
 
 
