@@ -44,7 +44,7 @@ e recarregado ao abrir o programa. Ao abrir, o sistema avisa se há tarefas atra
 Requisito: **Python 3.8 ou superior** (não usa nenhuma biblioteca externa).
 
 ```bash
-git clone https://github.com/SEU-USUARIO/tasktracker-projeto.git
+git clone https://github.com/DiogoDias2007/tasktracker-projeto.git
 cd tasktracker-projeto
 python src/main.py
 ```
