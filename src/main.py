@@ -256,6 +256,65 @@ def listar_tarefas():
 
 
 # ----------------------------------------------------------------------
+# 3.8.5 Buscar índice e mudar situação (ciclo de vida, seção 3.7)
+# ----------------------------------------------------------------------
+
+def buscar_indice_por_id(id_procurado):
+    """Busca sequencial: devolve a posição na lista, ou -1 se não existir."""
+    for i, t in enumerate(tarefas):
+        if t["id"] == id_procurado:
+            return i
+    return -1
+
+
+def localizar_tarefa():
+    """Pede o identificador ao usuário e devolve o índice da tarefa, ou -1."""
+    texto = ler("Identificador da tarefa: ")
+    if not texto.isdigit():
+        print("ERRO: o identificador deve ser um número inteiro.")
+        return -1
+    indice = buscar_indice_por_id(int(texto))
+    if indice == -1:
+        print("ERRO: tarefa não encontrada.")
+    return indice
+
+
+def transicao_valida(origem, destino):
+    """Caminhos permitidos do ciclo de vida (tabela da seção 3.7)."""
+    return (origem, destino) in {
+        ("PENDENTE", "EM_ANDAMENTO"),
+        ("PENDENTE", "CONCLUIDA"),
+        ("PENDENTE", "CANCELADA"),
+        ("EM_ANDAMENTO", "CONCLUIDA"),
+        ("EM_ANDAMENTO", "CANCELADA"),
+    }
+
+
+def mudar_situacao(nova_situacao):
+    indice = localizar_tarefa()
+    if indice == -1:
+        return
+    tarefa = tarefas[indice]
+
+    # Situações finais não mudam mais (R7)
+    if tarefa["situacao"] in SITUACOES_FINAIS:
+        print("ERRO: a tarefa já está encerrada e não pode ser alterada.")
+        return
+
+    if not transicao_valida(tarefa["situacao"], nova_situacao):
+        print(f"ERRO: mudança inválida de {nome(tarefa['situacao'])} "
+              f"para {nome(nova_situacao)}.")
+        return
+
+    tarefa["situacao"] = nova_situacao
+    if nova_situacao == "CONCLUIDA":
+        tarefa["data_conclusao"] = data_atual()   # R8
+
+    salvar_dados()
+    print(f"Situação atualizada para {nome(nova_situacao)}.")
+
+
+# ----------------------------------------------------------------------
 # Persistência (será implementada no commit "Adiciona persistência em arquivo")
 # Por enquanto as tarefas ficam apenas na memória.
 # ----------------------------------------------------------------------
@@ -275,6 +334,9 @@ def salvar_dados():
 MENU = [
     ("1", "Cadastrar tarefa", cadastrar_tarefa),
     ("2", "Listar todas as tarefas", listar_tarefas),
+    ("5", "Iniciar tarefa", lambda: mudar_situacao("EM_ANDAMENTO")),
+    ("6", "Concluir tarefa", lambda: mudar_situacao("CONCLUIDA")),
+    ("7", "Cancelar tarefa", lambda: mudar_situacao("CANCELADA")),
 ]
 
 
