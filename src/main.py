@@ -177,6 +177,85 @@ def cadastrar_tarefa():
 
 
 # ----------------------------------------------------------------------
+# 3.8.4 Ordenar e listar
+# ----------------------------------------------------------------------
+
+def peso_prioridade(p):
+    """Transforma o texto da prioridade em número para permitir comparação."""
+    if p == "ALTA":
+        return 3
+    if p == "MEDIA":
+        return 2
+    if p == "BAIXA":
+        return 1
+    return 0
+
+
+def prazo_para_ordenar(t):
+    """Tarefa sem data limite fica depois das que têm prazo."""
+    return t["data_limite"] or date.max
+
+
+def vem_depois(anterior, atual):
+    """True se 'anterior' deve ficar depois de 'atual' na lista."""
+    peso_ant = peso_prioridade(anterior["prioridade"])
+    peso_atu = peso_prioridade(atual["prioridade"])
+    return peso_ant < peso_atu or (
+        peso_ant == peso_atu and prazo_para_ordenar(anterior) > prazo_para_ordenar(atual)
+    )
+
+
+def ordenar_tarefas(lista):
+    """Ordenação por inserção (seção 3.6).
+    Critério principal: prioridade da mais alta para a mais baixa.
+    Desempate: data limite mais próxima primeiro."""
+    for i in range(1, len(lista)):
+        atual = lista[i]
+        j = i - 1
+        while j >= 0 and vem_depois(lista[j], atual):
+            lista[j + 1] = lista[j]
+            j -= 1
+        lista[j + 1] = atual
+
+
+def esta_atrasada(t):
+    # R9: atrasada = prazo já passou e a situação não é final
+    return (
+        t["situacao"] not in SITUACOES_FINAIS
+        and t["data_limite"] is not None
+        and t["data_limite"] < data_atual()
+    )
+
+
+def indicador_atraso(t):
+    if esta_atrasada(t):
+        return "ATRASADA"
+    if t["situacao"] in SITUACOES_FINAIS:
+        return "-"
+    return "EM DIA"
+
+
+def exibir_tabela(lista):
+    print(f"{'ID':>4} | {'TÍTULO':<30} | {'PRIORIDADE':<10} | "
+          f"{'SITUAÇÃO':<12} | {'DATA LIMITE':<11} | ATRASO")
+    print("-" * 92)
+    for t in lista:
+        titulo = t["titulo"] if len(t["titulo"]) <= 30 else t["titulo"][:27] + "..."
+        print(f"{t['id']:>4} | {titulo:<30} | {nome(t['prioridade']):<10} | "
+              f"{nome(t['situacao']):<12} | {formatar_data(t['data_limite']):<11} | "
+              f"{indicador_atraso(t)}")
+
+
+def listar_tarefas():
+    if not tarefas:
+        print("Nenhuma tarefa cadastrada.")
+        return
+    ordenar_tarefas(tarefas)
+    exibir_tabela(tarefas)
+    print(f"Total exibido: {len(tarefas)} tarefa(s).")
+
+
+# ----------------------------------------------------------------------
 # Persistência (será implementada no commit "Adiciona persistência em arquivo")
 # Por enquanto as tarefas ficam apenas na memória.
 # ----------------------------------------------------------------------
@@ -195,6 +274,7 @@ def salvar_dados():
 
 MENU = [
     ("1", "Cadastrar tarefa", cadastrar_tarefa),
+    ("2", "Listar todas as tarefas", listar_tarefas),
 ]
 
 
