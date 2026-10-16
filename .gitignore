@@ -1,0 +1,17 @@
+# Base de dados local do TaskTracker (cada usuário tem a sua)
+tasktracker.json
+tasktracker.json.tmp
+tasktracker.json.corrompido
+*.tmp
+
+# Arquivos gerados pelo Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Arquivos do sistema operacional e de editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
