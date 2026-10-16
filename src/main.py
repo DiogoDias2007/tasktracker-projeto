@@ -461,6 +461,90 @@ def editar_tarefa():
 
 
 # ----------------------------------------------------------------------
+# Filtro, tarefas atrasadas e relatório
+# ----------------------------------------------------------------------
+
+def filtrar_tarefas():
+    print("Filtrar por: 1-Situação  2-Prioridade  3-Categoria")
+    tipo = ler("Opção do filtro: ")
+
+    if tipo == "1":
+        valor = normalizar(ler("Situação [Pendente / Em andamento / Concluída / Cancelada]: "))
+        if valor not in SITUACOES:
+            print("ERRO: a situação deve ser Pendente, Em andamento, Concluída ou Cancelada.")
+            return
+        resultado = [t for t in tarefas if t["situacao"] == valor]
+    elif tipo == "2":
+        valor = normalizar(ler("Prioridade [Alta / Média / Baixa]: "))
+        if valor not in PRIORIDADES:
+            print("ERRO: a prioridade deve ser Alta, Média ou Baixa.")
+            return
+        resultado = [t for t in tarefas if t["prioridade"] == valor]
+    elif tipo == "3":
+        valor = normalizar(ler("Categoria: "))
+        if not valor:
+            print("ERRO: informe a categoria.")
+            return
+        resultado = [t for t in tarefas if normalizar(t["categoria"]) == valor]
+    else:
+        print("ERRO: opção de filtro inválida. Escolha de 1 a 3.")
+        return
+
+    if not resultado:
+        print("Nenhuma tarefa encontrada com esse filtro.")
+        return
+    ordenar_tarefas(resultado)
+    exibir_tabela(resultado)
+    print(f"Tarefas encontradas: {len(resultado)}")
+
+
+def listar_atrasadas():
+    atrasadas = [t for t in tarefas if esta_atrasada(t)]   # R9
+    if not atrasadas:
+        print("Nenhuma tarefa atrasada. Tudo em dia!")
+        return
+
+    atrasadas.sort(key=lambda t: t["data_limite"])   # a mais antiga primeiro
+    print(f"{'ID':>4} | {'TÍTULO':<30} | {'DATA LIMITE':<11} | DIAS DE ATRASO")
+    print("-" * 70)
+    for t in atrasadas:
+        dias = (data_atual() - t["data_limite"]).days
+        titulo = t["titulo"] if len(t["titulo"]) <= 30 else t["titulo"][:27] + "..."
+        print(f"{t['id']:>4} | {titulo:<30} | {formatar_data(t['data_limite']):<11} | {dias}")
+    print(f"Total de tarefas atrasadas: {len(atrasadas)}")
+
+
+def gerar_relatorio():
+    total = len(tarefas)
+    contagem = {s: 0 for s in SITUACOES}
+    qtd_atrasada = 0
+    for t in tarefas:
+        contagem[t["situacao"]] += 1
+        if esta_atrasada(t):
+            qtd_atrasada += 1
+
+    taxa = (contagem["CONCLUIDA"] / total) * 100 if total > 0 else 0
+
+    concluidas = [t for t in tarefas if t["situacao"] == "CONCLUIDA"]
+    if concluidas:
+        dias = [(t["data_conclusao"] - t["data_criacao"]).days for t in concluidas]
+        tempo_medio = f"{sum(dias) / len(dias):.1f} dia(s)".replace(".", ",")
+    else:
+        tempo_medio = "-"
+
+    print("RELATÓRIO DE PRODUTIVIDADE")
+    print(f"Total de tarefas .......: {total}")
+    print(f"Pendentes ..............: {contagem['PENDENTE']}")
+    print(f"Em andamento ...........: {contagem['EM_ANDAMENTO']}")
+    print(f"Concluídas .............: {contagem['CONCLUIDA']}")
+    print(f"Canceladas .............: {contagem['CANCELADA']}")
+    print(f"Atrasadas ..............: {qtd_atrasada}")
+    taxa_texto = f"{taxa:.1f}".replace(".", ",")
+    print(f"Taxa de conclusão ......: {taxa_texto}%")
+    print(f"Tempo médio de execução : {tempo_medio}")
+
+
+# ----------------------------------------------------------------------
 # 3.8.2 Programa principal
 # ----------------------------------------------------------------------
 
@@ -473,6 +557,9 @@ MENU = [
     ("6", "Concluir tarefa", lambda: mudar_situacao("CONCLUIDA")),
     ("7", "Cancelar tarefa", lambda: mudar_situacao("CANCELADA")),
     ("8", "Excluir tarefa", excluir_tarefa),
+    ("9", "Filtrar tarefas (situação, prioridade ou categoria)", filtrar_tarefas),
+    ("10", "Listar tarefas atrasadas", listar_atrasadas),
+    ("11", "Relatório de produtividade", gerar_relatorio),
 ]
 
 
@@ -488,6 +575,11 @@ def exibir_menu():
 
 def main():
     carregar_dados()
+
+    # Aviso logo na abertura: evita a "perda de prazo silenciosa" (seção 1.2)
+    atrasadas = sum(1 for t in tarefas if esta_atrasada(t))
+    if atrasadas:
+        print(f"\nATENÇÃO: você tem {atrasadas} tarefa(s) atrasada(s). Use a opção 10.")
 
     acoes = {opcao: acao for opcao, _, acao in MENU}
     try:
