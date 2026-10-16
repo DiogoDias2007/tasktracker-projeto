@@ -338,16 +338,72 @@ def excluir_tarefa():
 
 
 # ----------------------------------------------------------------------
-# Persistência (será implementada no commit "Adiciona persistência em arquivo")
-# Por enquanto as tarefas ficam apenas na memória.
+# 3.8.6 Persistência em arquivo JSON
 # ----------------------------------------------------------------------
 
+CAMPOS_DATA = ("data_criacao", "data_limite", "data_conclusao")
+
+
+def tarefa_para_json(t):
+    """Converte as datas em texto (aaaa-mm-dd) para gravar no arquivo."""
+    copia = dict(t)
+    for campo in CAMPOS_DATA:
+        copia[campo] = t[campo].isoformat() if t[campo] else None
+    return copia
+
+
+def tarefa_de_json(d):
+    """Converte o texto gravado no arquivo de volta para datas."""
+    t = dict(d)
+    for campo in CAMPOS_DATA:
+        t[campo] = date.fromisoformat(d[campo]) if d.get(campo) else None
+    return t
+
+
 def carregar_dados():
-    pass
+    global proximo_id
+
+    tarefas.clear()
+    proximo_id = 1
+
+    if not os.path.exists(ARQUIVO):
+        return
+
+    try:
+        with open(ARQUIVO, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        lidas = [tarefa_de_json(d) for d in dados["tarefas"]]
+        contador_salvo = int(dados.get("proximo_id", 1))
+    except (OSError, ValueError, KeyError, TypeError) as erro:
+        # Arquivo corrompido: guarda uma cópia para não perder nada e começa vazio.
+        copia = ARQUIVO + ".corrompido"
+        os.replace(ARQUIVO, copia)
+        print(f"AVISO: não foi possível ler {ARQUIVO} ({erro}).")
+        print(f"O arquivo foi preservado como {copia} e o sistema começa vazio.")
+        return
+
+    tarefas.extend(lidas)
+
+    # Recalcula o contador para nunca repetir identificador (R6).
+    # Ajuste em relação à Fase 1: o contador também é gravado no arquivo.
+    # Usando só o maior id existente, excluir a tarefa de maior número e
+    # reabrir o programa faria esse número voltar a ser usado.
+    maior_id = max((t["id"] for t in tarefas), default=0)
+    proximo_id = max(contador_salvo, maior_id + 1)
 
 
 def salvar_dados():
-    pass
+    # Grava num arquivo temporário e só então substitui o original,
+    # para que uma falha no meio da gravação não estrague a base.
+    temporario = ARQUIVO + ".tmp"
+    dados = {
+        "proximo_id": proximo_id,
+        "total": len(tarefas),
+        "tarefas": [tarefa_para_json(t) for t in tarefas],
+    }
+    with open(temporario, "w", encoding="utf-8") as f:
+        json.dump(dados, f, ensure_ascii=False, indent=2)
+    os.replace(temporario, ARQUIVO)
 
 
 # ----------------------------------------------------------------------
