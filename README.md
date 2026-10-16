@@ -5,7 +5,7 @@ Sistema de gerenciamento de tarefas em linha de comando (CLI), escrito em Python
 Projeto da disciplina **Bootcamp II** — Análise e Desenvolvimento de Sistemas.
 Autor: **Diogo de Oliveira Dias** (Turma B) · diogo.oliveira07@sempreceub.com
 
-📺 **Vídeo de demonstração:** _(cole aqui o link do YouTube)_
+📺 **Vídeo de demonstração:** https://youtu.be/4Ol3YwMUDJc
 
 ---
 
