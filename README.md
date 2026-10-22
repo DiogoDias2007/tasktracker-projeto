@@ -5,7 +5,78 @@ Sistema de gerenciamento de tarefas em linha de comando (CLI), escrito em Python
 Projeto da disciplina **Bootcamp II** — Análise e Desenvolvimento de Sistemas.
 Autor: **Diogo de Oliveira Dias** (Turma B) · diogo.oliveira07@sempreceub.com
 
-📺 **Vídeo de demonstração:** https://youtu.be/4Ol3YwMUDJc
+📺 **Vídeo da Fase 3 (Docker):** _(link do YouTube)_
+📺 **Vídeo da Fase 2 (CLI em Python):** https://youtu.be/4Ol3YwMUDJc
+
+---
+
+## 🐳 Como executar com Docker (Fase 3)
+
+O TaskTracker está empacotado em uma imagem Docker. Assim ele roda de forma idêntica
+em qualquer máquina, sem instalar Python. O único requisito é ter o
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS) ou o
+Docker Engine (Linux) instalado e aberto.
+
+Primeiro, baixe o projeto e entre na pasta:
+
+```bash
+git clone https://github.com/DiogoDias2007/tasktracker-projeto.git
+cd tasktracker-projeto
+```
+
+### 1. Como construir a imagem
+
+```bash
+docker build -t tasktracker .
+```
+
+### 2. Como rodar o container em modo isolado
+
+```bash
+docker run -it --rm tasktracker
+```
+
+`-i` mantém a entrada do teclado aberta e `-t` cria um terminal virtual. Os dois são
+necessários porque o menu usa `input()`. `--rm` apaga o container ao sair. Neste modo,
+as tarefas não ficam salvas entre uma execução e outra.
+
+### 3. Como rodar via orquestração (Recomendado)
+
+```bash
+docker compose run --rm tasktracker-app
+```
+
+O `docker-compose.yml` faz o mesmo que `-it` (com `stdin_open: true` e `tty: true`),
+constrói a imagem se ela ainda não existir e guarda as tarefas no volume
+`tasktracker-dados`. Por isso elas continuam lá na próxima execução.
+
+> Use `docker compose run`, e não `docker compose up`. O `up` não conecta o seu teclado
+> ao menu.
+
+### Dicas
+
+| Para… | Comando |
+| :--- | :--- |
+| Reconstruir a imagem depois de mudar o código | `docker compose build` |
+| Repetir o teste de mesa com a data de 10/09/2026 | `docker compose run --rm -e TASKTRACKER_HOJE=2026-09-10 tasktracker-app` |
+| Apagar as tarefas salvas e começar do zero | `docker compose down -v` |
+| Ver a imagem criada | `docker images tasktracker` |
+
+### Decisões técnicas
+
+| No `Dockerfile` | Por quê |
+| :--- | :--- |
+| `FROM python:3.11-slim` | Base leve, com só o necessário. O TaskTracker usa apenas a biblioteca padrão do Python, então não há `pip install`. |
+| `WORKDIR /app` | Pasta central da aplicação dentro do container. |
+| `ENV PYTHONUNBUFFERED=1` | Cada mensagem aparece na hora, sem esperar o buffer do Python. Importante num programa interativo. |
+| `ENV TASKTRACKER_ARQUIVO=/app/dados/tasktracker.json` | Separa os dados do código, para guardá-los num volume. |
+| `RUN useradd …` + `USER tasktracker` | O programa roda como usuário comum, não como administrador (root). |
+| `COPY src/ /app/src/` | Copia só o código. O `.dockerignore` deixa de fora `.git`, `docs` e `tests`. |
+| `CMD ["python", "src/main.py"]` | Abre o menu quando o container inicia. |
+
+O relógio do container usa o horário UTC (3 horas à frente de Brasília). Entre 21h e
+meia-noite, o "hoje" do container já é o dia seguinte. Isso afeta só a regra R3, de não
+aceitar data limite anterior a hoje.
 
 ---
 
@@ -39,7 +110,7 @@ O TaskTracker existe para responder com segurança a três perguntas:
 Os dados ficam no arquivo `tasktracker.json`, gravado automaticamente após cada alteração
 e recarregado ao abrir o programa. Ao abrir, o sistema avisa se há tarefas atrasadas.
 
-## Como executar
+## Como executar sem Docker
 
 Requisito: **Python 3.8 ou superior** (não usa nenhuma biblioteca externa).
 
@@ -122,15 +193,24 @@ $env:TASKTRACKER_HOJE="2026-09-10"; python src/main.py
 
 ```
 tasktracker-projeto/
-├── README.md                    # Este arquivo
 ├── .gitignore                   # Arquivos que o Git ignora (base local, cache do Python)
+├── .dockerignore                # Arquivos que ficam fora da imagem Docker
 ├── docs/
-│   └── planejamento_logico.pdf  # Planejamento lógico da Fase 1
+│   └── planejamento_logico.pdf  # Fase 1: planejamento lógico (mantido para rastreabilidade)
 ├── src/
-│   └── main.py                  # Programa principal (menu e sub-rotinas da seção 3.8)
-└── tests/
-    └── test_tasktracker.py      # Testes automatizados do teste de mesa
+│   └── main.py                  # Fase 2: programa principal (menu e sub-rotinas da seção 3.8)
+├── tests/
+│   └── test_tasktracker.py      # Fase 2: testes automatizados do teste de mesa
+├── Dockerfile                   # Fase 3: receita da imagem (empacotar)
+├── docker-compose.yml           # Fase 3: execução interativa (orquestrar)
+└── README.md                    # Este arquivo
 ```
+
+| Fase | Papel | Entrega |
+| :---: | :--- | :--- |
+| 1 | Arquiteto(a) de Software | Planejamento lógico e pseudocódigo (`docs/`) |
+| 2 | Desenvolvedor(a) | Menu CLI e regras de negócio em Python (`src/`, `tests/`) |
+| 3 | Engenheiro(a) DevOps | Imagem Docker e orquestração (`Dockerfile`, `docker-compose.yml`) |
 
 ## Do planejamento ao código
 
@@ -157,7 +237,8 @@ Ajustes feitos durante a implementação:
 
 O histórico de commits segue a sequência planejada na seção 4.3 do planejamento.
 As consultas (busca, edição, filtros e relatório) foram desenvolvidas na branch
-`feature/consultas` e integradas à `main` com um merge. Para ver o histórico:
+`feature/consultas`, e a conteinerização da Fase 3 na branch `feature/docker`. As duas
+foram integradas à `main` com um merge. Para ver o histórico:
 
 ```bash
 git log --oneline --graph --all
