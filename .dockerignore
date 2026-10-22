@@ -1,0 +1,12 @@
+# Arquivos que não precisam ir para dentro da imagem
+.git
+.gitignore
+docs/
+tests/
+README.md
+__pycache__/
+*.py[cod]
+tasktracker.json
+*.tmp
+.venv/
+venv/

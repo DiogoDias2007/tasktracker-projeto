@@ -1,0 +1,18 @@
+# ---------------------------------------------------------------
+# TaskTracker - orquestração (Fase 3)
+# O menu usa input(), então o container precisa de um canal de
+# entrada aberto e de um terminal virtual para ser interativo.
+# Uso recomendado:  docker compose run --rm tasktracker-app
+# ---------------------------------------------------------------
+
+services:
+  tasktracker-app:
+    build: .              # constrói a imagem a partir do Dockerfile desta pasta
+    image: tasktracker    # mesmo nome usado no "docker build -t tasktracker ."
+    stdin_open: true      # mantém o canal de entrada de dados aberto (docker run -i)
+    tty: true             # aloca um terminal virtual, simulando o console (docker run -t)
+    volumes:
+      - tasktracker-dados:/app/dados   # as tarefas continuam salvas entre uma execução e outra
+
+volumes:
+  tasktracker-dados:
